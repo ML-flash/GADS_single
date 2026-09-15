@@ -1,0 +1,29 @@
+{
+  "seed": 42,
+  "generations": 300,
+  "selection_lines": 2,
+  "scoring": "rebalanced",
+  "report_every": 10,
+  "stop_on_perfect": true,
+  "save_result": "results/last_run.json",
+  "gads": {
+    "POPULATION_SIZE": 300,
+    "MIN_LEN": 2,
+    "MAX_LEN": 100,
+    "ENABLE_CROSSOVER": false,
+    "NUM_PARENTS": 200,
+    "CROSSOVER_PROB": 0.5,
+    "BOUNDARY_INSERT_PROB": 0.0035,
+    "BOUNDARY_REMOVE_PROB": 0.002,
+    "CAPTURE_PROB": 0.09,
+    "MIN_CAPTURE_LEN": 2,
+    "MUTATION_PROB": 0.05,
+    "BOUNDARY_MUTATION_PROB": 0.02,
+    "OPEN_PROB": 0.005,
+    "BASE_GENE_PROB": 0.57,
+    "MCO_DECAY": 0.9,
+    "DB_THRESHOLD": 1,
+    "ELITE_FRAC": 0.02,
+    "USE_FITNESS": true
+  }
+}
