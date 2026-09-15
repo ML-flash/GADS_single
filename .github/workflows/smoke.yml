@@ -1,0 +1,29 @@
+name: Smoke
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile
+        run: python -m py_compile GADS.py mux_fitness.py run.py
+      - name: Verify MUX evaluator
+        run: |
+          python - <<'PY'
+          from mux_fitness import MuxFitness, CANONICAL_6MUX
+          fit = MuxFitness(selection_lines=2, scoring="rebalanced")
+          report = fit.report(CANONICAL_6MUX)
+          print(report)
+          assert report["correct"] == report["rows"] == 64
+          PY
+      - name: Run solo GADS
+        run: python run.py --generations 25 --report-every 25 --no-save
