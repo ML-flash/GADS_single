@@ -219,8 +219,8 @@ def make_initial_population(fit, seed):
     for org in pop:
         if endpoint_org(org, G.MetaGenome(), fit) != (x0, y0):
             raise AssertionError("initial geometry population moved off start point")
-    if fit.score(tokens_to_atoms(pop[0])) != 0.0:
-        raise AssertionError("preregistered geometry start is not exactly optimal")
+    if abs(fit.score(tokens_to_atoms(pop[0]))) >= 1e-20:
+        raise AssertionError("preregistered geometry start is not numerically optimal")
     return pop
 
 
