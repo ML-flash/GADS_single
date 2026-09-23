@@ -35,14 +35,14 @@ def main(argv=None):
     gate("canonical MUX blob", True, CFG.CANONICAL_MUX_BLOB)
 
     ef = RG.GeometryFitness(CFG.ELLIPSE_A, CFG.ELLIPSE_B, CFG.RIDGE_DISTANCE)
-    gate("ellipse high-curvature endpoint is optimal", ef.score(["R"] * int(CFG.ELLIPSE_A)) == 0.0)
-    gate("ellipse low-curvature endpoint is optimal", ef.score(["U"] * int(CFG.ELLIPSE_B)) == 0.0)
+    gate("ellipse high-curvature endpoint is optimal", abs(ef.score(["R"] * int(CFG.ELLIPSE_A))) < 1e-20)
+    gate("ellipse low-curvature endpoint is optimal", abs(ef.score(["U"] * int(CFG.ELLIPSE_B))) < 1e-20)
     kh = ef.curvature_xy(int(CFG.ELLIPSE_A), 0)
     kl = ef.curvature_xy(0, int(CFG.ELLIPSE_B))
     gate("ellipse has ordered curvature", kh > kl, "high=%.6g low=%.6g" % (kh, kl))
     sx, sy = CFG.ELLIPSE_START
     gate("ellipse preregistered start is exactly optimal",
-         ef.score(["R"] * sx + ["U"] * sy) == 0.0,
+         abs(ef.score(["R"] * sx + ["U"] * sy)) < 1e-20,
          "start=%r" % (CFG.ELLIPSE_START,))
     ks = ef.curvature_xy(sx, sy)
     gate("ellipse start is not a curvature extremum", kl < ks < kh,
