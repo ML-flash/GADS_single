@@ -219,3 +219,6 @@ __marimo__/
 
 # GADS runtime output
 /results/
+
+# Curvature-Renormalization Orbit local outcomes
+/experiments/cro/results/
