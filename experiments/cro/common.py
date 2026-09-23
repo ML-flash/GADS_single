@@ -17,7 +17,7 @@ import config as CFG
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-CANONICAL = ROOT / "canonical" / "gads"
+CANONICAL = ROOT
 if str(CANONICAL) not in sys.path:
     sys.path.insert(0, str(CANONICAL))
 
