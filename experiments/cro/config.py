@@ -16,7 +16,7 @@ seed are matched.
 CANONICAL_GADS_BLOB = "0975489901e88ea9bcc4145d7f25686948e736e4"
 CANONICAL_MUX_BLOB = "a7bf2332ac4b6a512c11867436dbd26caac6568e"
 
-EXPERIMENT_ID = "cro_v2_mux6"
+EXPERIMENT_ID = "cro_v3_mux6_probe_split"
 SEEDS = tuple(range(1, 17))
 
 # Observation cadence / probe budget.  Probe mutations are read-only: they are
@@ -104,4 +104,4 @@ STRUCTURE_KO = {
     "BASE_GENE_PROB": 1.0,
 }
 
-RESULTS_DIR = "results"
+RESULTS_DIR = "results/cro_v3_mux6_probe_split"
