@@ -200,10 +200,15 @@ representation-sensitive probes. If only the latter move, that distinguishes a
 change in GADS coordinates from a change in the underlying phenotype's ordinary
 atom-level fragility.
 
-## Phase B — GADS_single/MUX6 neutral orbit
+## Phase B — GADS_single/MUX6 degenerate-peak orbit
 
-Phase B uses the canonical GADS_single 6-MUX evaluator but removes the original scoring confound
-from the orbit.
+Phase B uses the canonical GADS_single 6-MUX evaluator but removes the original
+scoring confound from the orbit. This is not globally neutral selection. The
+64/64 solutions form a degenerate fitness peak: all perfect programs have equal
+maximal fitness, while mutations that reduce truth-table correctness are
+selected against. Mutation therefore continuously produces off-peak variation
+and selection continuously removes it; only motion within the maximal set is
+fitness-degenerate.
 
 The runner constructs an exact 22-token postfix MUX6 program and verifies it is
 64/64 before the run. It initializes an atomic population with neutral
@@ -221,7 +226,9 @@ There is:
 - no robustness term;
 - no structural term.
 
-Thus every 64/64 program has identical maximal scalar fitness.
+Thus every 64/64 program has identical maximal scalar fitness, but imperfect
+programs remain below the peak and supply the selective exhaust required to
+constrain the orbit.
 
 The full-GADS arm uses the official GADS_single single-node parameter block
 from the repository's default config: population 300, 200 parents, 5% mutation,
