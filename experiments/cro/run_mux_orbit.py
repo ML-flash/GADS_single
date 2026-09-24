@@ -1,6 +1,6 @@
-"""CRO Phase B: neutral MUX11 orbit under official GADS_single GADS.
+"""CRO Phase B: neutral MUX6 orbit under official GADS_single GADS.
 
-The run starts directly on an exact 2048/2048 MUX11 solution.  Fitness during
+The run starts directly on an exact 64/64 MUX6 solution.  Fitness during
 this experiment is *correct rows only*.  All perfect programs therefore have
 exactly equal scalar fitness; original M-E-GA length/operation terms are absent
 from the orbit by construction.
@@ -32,7 +32,7 @@ HERE = Path(__file__).resolve().parent
 
 
 class CorrectOnlyMux:
-    def __init__(self, selection_lines=3):
+    def __init__(self, selection_lines=2):
         self.base = C.MuxFitness(selection_lines=selection_lines, scoring="original")
         self.atoms = self.base.atoms
         self.n_rows = self.base.n_rows
@@ -336,7 +336,7 @@ def run_seed(seed, generations, fork_generation, checkpoint_every, org_limit, tr
 
 
 def build_parser():
-    p = argparse.ArgumentParser(description="CRO Phase B neutral MUX11 orbit")
+    p = argparse.ArgumentParser(description="CRO Phase B neutral MUX6 orbit")
     p.add_argument("--seed", type=int, required=True)
     p.add_argument("--generations", type=int, default=CFG.MUX_GENERATIONS)
     p.add_argument("--fork-generation", type=int, default=CFG.MUX_FORK_GENERATION)
