@@ -26,6 +26,8 @@ def load_phase(root, phase):
             raise RuntimeError("wrong experiment product: %s" % p)
         if d.get("canonical_gads_blob") != CFG.CANONICAL_GADS_BLOB:
             raise RuntimeError("canonical GADS mismatch: %s" % p)
+        if phase == "mux" and d.get("probe_rng_scheme") != "family_and_trial_isolated_v1":
+            raise RuntimeError("MUX probe RNG scheme mismatch: %s" % p)
         out.append(d)
     return out
 
@@ -242,6 +244,35 @@ def geometry_tests(records):
 
 def mux_tests(records):
     tests = []
+
+    # Direct causal fork diagnostics: identical decoded programs immediately
+    # before vs. after flattening, with exactly paired per-trial perturbations.
+    seeds, vals = paired_values(
+        records,
+        lambda r: r["fork_probe"]["delta_before_minus_flatten"]["proposal_robustness"],
+    )
+    tests.append(summarize(
+        "M0a immediate flatten proposal-robustness loss > 0",
+        seeds, vals, alternative="greater"
+    ))
+
+    seeds, vals = paired_values(
+        records,
+        lambda r: r["fork_probe"]["delta_before_minus_flatten"]["canonical_robustness"],
+    )
+    tests.append(summarize(
+        "M0b immediate flatten canonical-robustness loss > 0",
+        seeds, vals, alternative="greater"
+    ))
+
+    seeds, vals = paired_values(
+        records,
+        lambda r: r["fork_probe"]["delta_before_minus_flatten"]["atomic_robustness"],
+    )
+    tests.append(summarize(
+        "M0-control immediate flatten atomic robustness",
+        seeds, vals, alternative="two-sided"
+    ))
 
     seeds, vals = paired_values(
         records,
