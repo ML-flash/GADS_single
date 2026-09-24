@@ -92,7 +92,15 @@ def mux_population_metrics(pop, mg, evals, fit):
 
 
 def probe_population(pop, mg, fit, seed, generation, org_limit, trials):
-    prng = random.Random("mux-probe:%s:%s" % (seed, generation))
+    """Read-only matched robustness probes with family-isolated RNG streams.
+
+    Organism selection and every family/organism/trial probe get deterministic
+    independent RNGs. A variable number of draws inside canonical mutation can
+    therefore never perturb proposal or atomic probes, nor later canonical
+    trials. The same seed/generation/index/trial key gives matched perturbations
+    across intact and flattened representations.
+    """
+    select_rng = random.Random("mux-probe-select:%s:%s" % (seed, generation))
     perfect = [i for i, org in enumerate(pop) if correct_org(org, mg, fit) == fit.n_rows]
     if not perfect:
         return {
@@ -105,24 +113,37 @@ def probe_population(pop, mg, fit, seed, generation, org_limit, trials):
             "atomic_mean_loss": None,
         }
     if len(perfect) > org_limit:
-        perfect = prng.sample(perfect, org_limit)
+        perfect = select_rng.sample(perfect, org_limit)
 
     n = can_ok = prop_ok = atom_ok = 0
     can_loss = prop_loss = atom_loss = 0.0
     for idx in perfect:
         org = pop[idx]
-        for _ in range(trials):
-            mo, mm = C.canonical_pass_mutant(org, mg, prng)
+        for trial in range(trials):
+            can_rng = random.Random(
+                "mux-probe-canonical:%s:%s:%s:%s"
+                % (seed, generation, idx, trial)
+            )
+            prop_rng = random.Random(
+                "mux-probe-proposal:%s:%s:%s:%s"
+                % (seed, generation, idx, trial)
+            )
+            atom_rng = random.Random(
+                "mux-probe-atomic:%s:%s:%s:%s"
+                % (seed, generation, idx, trial)
+            )
+
+            mo, mm = C.canonical_pass_mutant(org, mg, can_rng)
             mc = correct_org(mo, mm, fit)
             can_ok += int(mc == fit.n_rows)
             can_loss += fit.n_rows - mc
 
-            po, pm = C.proposal_mutant(org, mg, prng)
+            po, pm = C.proposal_mutant(org, mg, prop_rng)
             pc = correct_org(po, pm, fit)
             prop_ok += int(pc == fit.n_rows)
             prop_loss += fit.n_rows - pc
 
-            ad = C.atomic_mutant(org, mg, prng)
+            ad = C.atomic_mutant(org, mg, atom_rng)
             ac = fit.correct([G.ATOMS[t - 2] for t in ad])
             atom_ok += int(ac == fit.n_rows)
             atom_loss += fit.n_rows - ac
@@ -267,6 +288,43 @@ def run_seed(seed, generations, fork_generation, checkpoint_every, org_limit, tr
     )
     fork_state = C.clone_state(pre["pop"], pre["mg"], pre["rng"], pre["tie_rng"])
 
+    # Direct causal measurement at the fork. Probe the exact same population
+    # before and immediately after phenotype-preserving flattening, using the
+    # same per-family/per-trial deterministic probe keys.
+    bpop, bmg, _, _ = C.restore_state(fork_state)
+    fork_before = probe_population(
+        bpop, bmg, fit, seed, fork_generation, org_limit, trials
+    )
+    apop, amg = C.flatten_population(bpop, bmg)
+    fork_after = probe_population(
+        apop, amg, fit, seed, fork_generation, org_limit, trials
+    )
+    if fork_before["probe_n"] != fork_after["probe_n"]:
+        raise AssertionError("fork probe sample changed under flattening")
+    if fork_before["atomic_robustness"] != fork_after["atomic_robustness"]:
+        raise AssertionError("flattening changed matched atomic robustness at fork")
+    if fork_before["atomic_mean_loss"] != fork_after["atomic_mean_loss"]:
+        raise AssertionError("flattening changed matched atomic loss at fork")
+    fork_probe = {
+        "before": fork_before,
+        "after_flatten": fork_after,
+        "delta_before_minus_flatten": {
+            key: (
+                fork_before[key] - fork_after[key]
+                if fork_before[key] is not None and fork_after[key] is not None
+                else None
+            )
+            for key in (
+                "canonical_robustness",
+                "proposal_robustness",
+                "atomic_robustness",
+                "canonical_mean_loss",
+                "proposal_mean_loss",
+                "atomic_mean_loss",
+            )
+        },
+    }
+
     ipop, img, irng, itie = C.restore_state(fork_state)
     intact = run_segment(
         seed=seed,
@@ -333,6 +391,8 @@ def run_seed(seed, generations, fork_generation, checkpoint_every, org_limit, tr
         "probe_orgs": org_limit,
         "probes_per_org": trials,
         "conditions": conditions,
+        "fork_probe": fork_probe,
+        "probe_rng_scheme": "family_and_trial_isolated_v1",
         "elapsed_seconds": time.time() - started,
     }
 
