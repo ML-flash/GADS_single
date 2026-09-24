@@ -6,7 +6,7 @@ blocks because they answer different questions:
 
 * geometry: reproduce curvature-driven drift on a deliberately simple smooth
   degenerate landscape;
-* mux: test the same broad phenomenon on the MUX11 task after replacing the
+* mux: test the same broad phenomenon on the MUX6 task after replacing the
   original scalar score with correctness only.
 
 One seed is one independent population-level replicate.  Conditions sharing a
@@ -16,7 +16,7 @@ seed are matched.
 CANONICAL_GADS_BLOB = "0975489901e88ea9bcc4145d7f25686948e736e4"
 CANONICAL_MUX_BLOB = "a7bf2332ac4b6a512c11867436dbd26caac6568e"
 
-EXPERIMENT_ID = "cro_v1"
+EXPERIMENT_ID = "cro_v2_mux6"
 SEEDS = tuple(range(1, 17))
 
 # Observation cadence / probe budget.  Probe mutations are read-only: they are
@@ -64,32 +64,33 @@ GEOMETRY_GADS_PARAMS = {
     "USE_FITNESS": True,
 }
 
-# ------------------------------- MUX11 -------------------------------------
+# ------------------------------- MUX6 --------------------------------------
 MUX_GENERATIONS = 3000
 MUX_FORK_GENERATION = 1500
-MUX_POPULATION = 700
-MUX_SELECTION_LINES = 3
+MUX_POPULATION = 300
+MUX_SELECTION_LINES = 2
 
-# River Experiment-1 solve tune.  The orbit changes only the experiment-local
-# fitness surface (correct rows only); canonical mutation/capture mechanics and
-# these rates remain unchanged.
+# Official GADS_single single-node defaults from repository config.json.
+# The orbit changes only the experiment-local fitness surface to correctness
+# only; mutation/capture mechanics and the standalone machine regime remain
+# unchanged.
 MUX_GADS_PARAMS = {
     "POPULATION_SIZE": MUX_POPULATION,
-    "NUM_PARENTS": 300,
-    "ELITE_FRAC": 0.00,
+    "NUM_PARENTS": 200,
+    "ELITE_FRAC": 0.02,
     "ENABLE_CROSSOVER": False,
     "CROSSOVER_PROB": 0.50,
     "USE_FITNESS": True,
     "MIN_LEN": 2,
     "MAX_LEN": 100,
-    "MUTATION_PROB": 0.020,
-    "BOUNDARY_MUTATION_PROB": 0.0015,
-    "CAPTURE_PROB": 0.003838,
-    "BOUNDARY_INSERT_PROB": 0.0030,
-    "BOUNDARY_REMOVE_PROB": 0.047,
-    "OPEN_PROB": 0.0035,
-    "BASE_GENE_PROB": 0.51,
-    "MCO_DECAY": 0.9855,
+    "MUTATION_PROB": 0.05,
+    "BOUNDARY_MUTATION_PROB": 0.02,
+    "CAPTURE_PROB": 0.09,
+    "BOUNDARY_INSERT_PROB": 0.0035,
+    "BOUNDARY_REMOVE_PROB": 0.002,
+    "OPEN_PROB": 0.005,
+    "BASE_GENE_PROB": 0.57,
+    "MCO_DECAY": 0.90,
     "MIN_CAPTURE_LEN": 2,
     "DB_THRESHOLD": 1,
 }
