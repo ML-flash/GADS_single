@@ -605,27 +605,23 @@ def find_boundaries(org, index):
         if org[j] == ENC_CLOSE: e = j; break
     return s, e
 
-def calculate_depth(org, index):
-    """Boundary depth at a position. Zero means outside any delimited span."""
-    d = 0
-    for c in org[:index + 1]:
-        if c == ENC_OPEN: d += 1
-        elif c == ENC_CLOSE: d -= 1
-    return d
-
 def attempt_capture(org, interior_idx, mg, events):
     """
     Lift the delimited span containing a position into a single composition
     token, replacing the span and its delimiters in the organism.
+
+    Returns the index at which the new composition was written, or None when
+    capture did not occur. The caller uses that index to resume immediately
+    after the replacement rather than advancing from a stale pre-capture index.
     """
     s, e = find_boundaries(org, interior_idx)
-    if s is None or e is None: return False
+    if s is None or e is None: return None
     content = tuple(org[s + 1:e])
     tpl, is_new = mg.try_capture(content)
-    if tpl is None: return False
+    if tpl is None: return None
     org[s:e + 1] = [tpl]
     if is_new: events["captures"] += 1
-    return True
+    return s
 
 def can_swap(a, b): return not (is_boundary(a) and is_boundary(b))
 
@@ -642,7 +638,15 @@ def attempt_swap(org, i, rng):
 
 def mutate_org(org, mg, rng, events):
     """
-    Walk an organism and apply one operator per position.
+    Walk an organism and apply one operator per visited position.
+
+    Boundary depth is traversal state, not a property recomputed from the
+    prefix. Because delimiters are matched and cannot nest, a single counter is
+    sufficient: crossing ENC_OPEN increments it and crossing ENC_CLOSE
+    decrements it. Local edits update that counter when they move, create or
+    remove a boundary. The mutation pass is therefore linear in exposed
+    organism length apart from the work intrinsically required by a structural
+    event such as copying a captured span.
 
     Two regimes. Outside a delimited span the operators are boundary insertion,
     open, substitution, swap, insertion and deletion. Inside one, insertion is
@@ -650,51 +654,93 @@ def mutate_org(org, mg, rng, events):
     composition. This is the only route by which new structure enters the
     Meta-Genome.
 
-    A delimiter is taken before either regime, since depth does not describe it:
-    it can be removed with its partner or swapped past a neighbour, and nothing
-    else applies. Both operators draw at the rate of the span it bounds.
+    A delimiter is handled before either regime: it can be removed with its
+    partner or swapped past a neighbour, and nothing else applies. Both
+    operators draw at the rate of the span it bounds.
     """
     i = 0
+    depth = 0
+
     while i < len(org):
         tok = org[i]
-        depth = calculate_depth(org, i); roll = rng.random()
+        roll = rng.random()
 
         if is_boundary(tok):
+            boundary = tok
             if roll < BOUNDARY_REMOVE_PROB:
-                if len(org) - 2 >= MIN_LEN: i = remove_pair_at(org, i); continue
-                else: i += 1; continue
+                if len(org) - 2 >= MIN_LEN:
+                    i = remove_pair_at(org, i)
+                    # remove_pair_at resumes on the token immediately before
+                    # the deleted pair when one exists. The state after that
+                    # token is outside; reverse a close if we are about to
+                    # revisit it.
+                    depth = (
+                        1 if i < len(org) and org[i] == ENC_CLOSE else 0
+                    )
+                    continue
             elif roll < BOUNDARY_REMOVE_PROB + BOUNDARY_MUTATION_PROB / 4:
-                ni, ds = attempt_swap(org, i, rng)
-                if ds: i = ni
-                i += 1; continue
-            else:
-                i += 1; continue
+                ni, did_swap = attempt_swap(org, i, rng)
+                if did_swap:
+                    i = ni
+                    depth += 1 if boundary == ENC_OPEN else -1
+                    i += 1
+                    continue
+
+            # No structural move: cross the delimiter in place.
+            depth += 1 if boundary == ENC_OPEN else -1
+            i += 1
+            continue
 
         if depth == 0:
             ow = OPEN_PROB if is_comp(tok) else 0.0
             t0 = BOUNDARY_INSERT_PROB; t1 = t0 + ow; t2 = t1 + MUTATION_PROB / 4
             t3 = t2 + MUTATION_PROB / 4; t4 = t3 + MUTATION_PROB / 4; t5 = t4 + MUTATION_PROB / 4
             if roll < t0:
-                org.insert(i, ENC_OPEN); org.insert(i + 2, ENC_CLOSE); i += 1; events["baseline_bounds"] += 1
+                org.insert(i, ENC_OPEN); org.insert(i + 2, ENC_CLOSE)
+                i += 1
+                depth = 1
+                events["baseline_bounds"] += 1
             elif roll < t1:
                 content = []
                 for el in tok:
                     content.extend(mg.open_resolve(el))
                 exp = [ENC_OPEN] + content + [ENC_CLOSE]
-                org[i:i + 1] = exp; i += len(exp); events["opens"] += 1; events["open_bounds"] += 1
+                org[i:i + 1] = exp
+                i += len(exp)
+                events["opens"] += 1
+                events["open_bounds"] += 1
             elif roll < t2:
                 org[i] = sample_token(rng, mg); i += 1
             elif roll < t3:
-                ni, ds = attempt_swap(org, i, rng)
-                if ds: i = ni
+                old_i = i
+                ni, did_swap = attempt_swap(org, i, rng)
+                if did_swap:
+                    # A non-boundary crossing a delimiter changes which side of
+                    # that delimiter the traversal occupies.
+                    if is_boundary(org[old_i]):
+                        depth = 1 - depth
+                    i = ni
                 i += 1
             elif roll < t4:
                 nt = sample_token(rng, mg)
-                if rng.random() < 0.5: org.insert(i, nt); i += 1
-                else: org.insert(i + 1, nt); i += 2
+                if rng.random() < 0.5:
+                    org.insert(i, nt); i += 1
+                else:
+                    org.insert(i + 1, nt); i += 2
             elif roll < t5:
-                if len(org) > MIN_LEN: del org[i]; i = max(i - 1, 0)
-                else: i += 1
+                if len(org) > MIN_LEN:
+                    old_i = i
+                    del org[i]
+                    if old_i > 0:
+                        i = old_i - 1
+                        prev = org[i]
+                        if prev == ENC_OPEN: depth -= 1
+                        elif prev == ENC_CLOSE: depth += 1
+                    else:
+                        i = 0
+                        depth = 0
+                else:
+                    i += 1
             else:
                 i += 1
             continue
@@ -704,31 +750,59 @@ def mutate_org(org, mg, rng, events):
         t0 = CAPTURE_PROB; t1 = t0 + ow; t2 = t1 + BOUNDARY_MUTATION_PROB / 4
         t3 = t2 + BOUNDARY_MUTATION_PROB / 4; t4 = t3 + BOUNDARY_MUTATION_PROB / 4; t5 = t4 + BOUNDARY_MUTATION_PROB / 4
         if roll < t0:
-            if attempt_capture(org, i, mg, events): i += 1; continue
+            capture_i = attempt_capture(org, i, mg, events)
+            if capture_i is not None:
+                # The whole open...close region is now one composition. Resume
+                # at the first token after it; the traversal is outside again.
+                i = capture_i + 1
+                depth = 0
+                continue
             i += 1
         elif roll < t1:
             if is_comp(tok):
                 content = []
                 for el in tok:
                     content.extend(mg.open_resolve(el))
-                org[i:i + 1] = content; i += len(content); events["opens"] += 1
+                org[i:i + 1] = content
+                i += len(content)
+                events["opens"] += 1
             else:
                 i += 1
         elif roll < t2:
             org[i] = sample_token(rng, mg); i += 1
         elif roll < t3:
-            ni, ds = attempt_swap(org, i, rng)
-            if ds: i = ni
+            old_i = i
+            ni, did_swap = attempt_swap(org, i, rng)
+            if did_swap:
+                if is_boundary(org[old_i]):
+                    depth = 1 - depth
+                i = ni
             i += 1
         elif roll < t4:
             nt = sample_token(rng, mg)
-            if rng.random() < 0.5: org.insert(i, nt); i += 1
-            else: org.insert(i + 1, nt); i += 2
+            if rng.random() < 0.5:
+                org.insert(i, nt); i += 1
+            else:
+                org.insert(i + 1, nt); i += 2
         elif roll < t5:
-            if len(org) > MIN_LEN: del org[i]; i = max(i - 1, 0)
-            else: i += 1
+            if len(org) > MIN_LEN:
+                old_i = i
+                del org[i]
+                if old_i > 0:
+                    i = old_i - 1
+                    prev = org[i]
+                    if prev == ENC_OPEN: depth -= 1
+                    elif prev == ENC_CLOSE: depth += 1
+                else:
+                    i = 0
+                    depth = 0
+            else:
+                i += 1
         else:
             i += 1
+
+    if depth != 0:
+        raise AssertionError("mutation traversal ended inside a boundary span")
     assert_invariants(org)
 
 
