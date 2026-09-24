@@ -29,7 +29,8 @@ def parse_seeds(text):
     return sorted(set(out))
 
 
-def one(phase, seed, probe_orgs, probes_per_org):
+def one(phase, seed, probe_orgs, probes_per_org, generations=None,
+        fork_generation=None, checkpoint_every=None, out_root=None):
     script = HERE / ("run_geometry.py" if phase == "geometry" else "run_mux_orbit.py")
     cmd = [
         sys.executable,
@@ -38,6 +39,14 @@ def one(phase, seed, probe_orgs, probes_per_org):
         "--probe-orgs", str(probe_orgs),
         "--probes-per-org", str(probes_per_org),
     ]
+    if generations is not None:
+        cmd += ["--generations", str(generations)]
+    if fork_generation is not None:
+        cmd += ["--fork-generation", str(fork_generation)]
+    if checkpoint_every is not None:
+        cmd += ["--checkpoint-every", str(checkpoint_every)]
+    if out_root is not None:
+        cmd += ["--out", str(out_root / phase / ("seed_%03d.json" % seed))]
     proc = subprocess.run(cmd, cwd=str(HERE), text=True)
     if proc.returncode:
         raise RuntimeError("%s seed %d exited %d" % (phase, seed, proc.returncode))
@@ -47,21 +56,67 @@ def one(phase, seed, probe_orgs, probes_per_org):
 def main(argv=None):
     p = argparse.ArgumentParser(description="Run CRO matched seed panel")
     p.add_argument("--phase", choices=("geometry", "mux", "both"), default="both")
-    p.add_argument("--seeds", default="1-16", help="e.g. 1-16 or 1,3,5")
+    p.add_argument("--seeds", default=None, help="e.g. 1-16 or 1,3,5")
     p.add_argument("--jobs", type=int, default=min(16, os.cpu_count() or 1))
-    p.add_argument("--probe-orgs", type=int, default=CFG.PROBE_ORGS)
-    p.add_argument("--probes-per-org", type=int, default=CFG.PROBES_PER_ORG)
+    p.add_argument("--probe-orgs", type=int)
+    p.add_argument("--probes-per-org", type=int)
+    p.add_argument(
+        "--pilot", action="store_true",
+        help="short exploratory panel: 4 seeds, 750 generations, fork 375, "
+             "25-generation checkpoints, lighter read-only probes, separate output"
+    )
     args = p.parse_args(argv)
 
+    if args.pilot:
+        seeds = parse_seeds(args.seeds or "1-4")
+        generations = 750
+        fork_generation = 375
+        checkpoint_every = 25
+        probe_orgs = args.probe_orgs if args.probe_orgs is not None else 8
+        probes_per_org = (
+            args.probes_per_org if args.probes_per_org is not None else 2
+        )
+        out_root = HERE / CFG.RESULTS_DIR / "pilot"
+        profile = "pilot"
+    else:
+        seeds = parse_seeds(args.seeds or "1-16")
+        generations = None
+        fork_generation = None
+        checkpoint_every = None
+        probe_orgs = (
+            args.probe_orgs if args.probe_orgs is not None else CFG.PROBE_ORGS
+        )
+        probes_per_org = (
+            args.probes_per_org
+            if args.probes_per_org is not None else CFG.PROBES_PER_ORG
+        )
+        out_root = None
+        profile = "full"
+
     phases = ["geometry", "mux"] if args.phase == "both" else [args.phase]
-    work = [(phase, seed) for phase in phases for seed in parse_seeds(args.seeds)]
-    print("CRO: %d runs, jobs=%d" % (len(work), args.jobs), flush=True)
+    work = [(phase, seed) for phase in phases for seed in seeds]
+    print(
+        "CRO %s: %d runs, jobs=%d, seeds=%s"
+        % (profile, len(work), args.jobs, ",".join(map(str, seeds))),
+        flush=True,
+    )
+    if args.pilot:
+        print(
+            "pilot: generations=%d fork=%d checkpoint=%d probes=%dx%d"
+            % (
+                generations, fork_generation, checkpoint_every,
+                probe_orgs, probes_per_org,
+            ),
+            flush=True,
+        )
 
     failures = []
     with cf.ThreadPoolExecutor(max_workers=max(1, args.jobs)) as ex:
         futs = {
-            ex.submit(one, phase, seed, args.probe_orgs, args.probes_per_org):
-            (phase, seed)
+            ex.submit(
+                one, phase, seed, probe_orgs, probes_per_org,
+                generations, fork_generation, checkpoint_every, out_root,
+            ): (phase, seed)
             for phase, seed in work
         }
         for fut in cf.as_completed(futs):
