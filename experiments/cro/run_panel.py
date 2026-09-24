@@ -65,9 +65,28 @@ def main(argv=None):
         help="short exploratory panel: 4 seeds, 750 generations, fork 375, "
              "25-generation checkpoints, lighter read-only probes, separate output"
     )
+    p.add_argument(
+        "--geometry-long", action="store_true",
+        help="duration follow-up: geometry only, 4 matched seeds, 3000 generations, "
+             "fork 1500, 25-generation checkpoints, lighter read-only probes"
+    )
     args = p.parse_args(argv)
 
-    if args.pilot:
+    if args.geometry_long:
+        if args.phase not in ("geometry", "both"):
+            raise ValueError("--geometry-long requires --phase geometry or both")
+        seeds = parse_seeds(args.seeds or "1-4")
+        generations = CFG.GEOMETRY_GENERATIONS
+        fork_generation = CFG.GEOMETRY_FORK_GENERATION
+        checkpoint_every = 25
+        probe_orgs = args.probe_orgs if args.probe_orgs is not None else 8
+        probes_per_org = (
+            args.probes_per_org if args.probes_per_org is not None else 2
+        )
+        out_root = HERE / CFG.RESULTS_DIR / "geometry_long"
+        profile = "geometry-long"
+        args.phase = "geometry"
+    elif args.pilot:
         seeds = parse_seeds(args.seeds or "1-4")
         generations = 750
         fork_generation = 375
@@ -100,11 +119,11 @@ def main(argv=None):
         % (profile, len(work), args.jobs, ",".join(map(str, seeds))),
         flush=True,
     )
-    if args.pilot:
+    if args.pilot or args.geometry_long:
         print(
-            "pilot: generations=%d fork=%d checkpoint=%d probes=%dx%d"
+            "%s: generations=%d fork=%d checkpoint=%d probes=%dx%d"
             % (
-                generations, fork_generation, checkpoint_every,
+                profile, generations, fork_generation, checkpoint_every,
                 probe_orgs, probes_per_org,
             ),
             flush=True,
