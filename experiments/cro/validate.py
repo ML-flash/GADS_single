@@ -1,6 +1,6 @@
 """CRO apparatus preflight.
 
-This is intentionally cheap.  It verifies source identity, exact MUX11 seed
+This is intentionally cheap.  It verifies source identity, exact MUX6 seed
 phenotype, geometry degeneracy, phenotype-preserving flattening, and imports all
 runners before any long panel is launched.
 """
@@ -57,7 +57,7 @@ def main(argv=None):
 
     mf = RM.CorrectOnlyMux(CFG.MUX_SELECTION_LINES)
     perfect = C.mux_perfect_program(CFG.MUX_SELECTION_LINES)
-    gate("constructed MUX11 program is 2048/2048",
+    gate("constructed MUX6 program is 64/64",
          mf.correct(perfect) == mf.n_rows,
          "len=%d" % len(perfect))
     gate("MUX orbit score is correctness only",
