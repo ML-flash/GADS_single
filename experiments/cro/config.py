@@ -13,7 +13,7 @@ One seed is one independent population-level replicate.  Conditions sharing a
 seed are matched.
 """
 
-CANONICAL_GADS_BLOB = "829e9bd74f8f403207cc41a730a6e429501fe75e"
+CANONICAL_GADS_BLOB = "0975489901e88ea9bcc4145d7f25686948e736e4"
 CANONICAL_MUX_BLOB = "a7bf2332ac4b6a512c11867436dbd26caac6568e"
 
 EXPERIMENT_ID = "cro_v1"
@@ -24,13 +24,6 @@ SEEDS = tuple(range(1, 17))
 CHECKPOINT_EVERY = 50
 PROBE_ORGS = 24
 PROBES_PER_ORG = 8
-
-# A full canonical mutate_org pass is intentionally much more expensive than
-# the standardized proposal and atomic probes: calculate_depth rescans the
-# exposed prefix at each visited position. Keep that diagnostic exact, but
-# sample it sparsely so observation cost does not dominate the experiment.
-CANONICAL_PROBE_ORGS = 4
-CANONICAL_CHECKPOINT_EVERY = 250
 
 # ----------------------------- geometry ------------------------------------
 GEOMETRY_GENERATIONS = 3000
