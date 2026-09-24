@@ -416,3 +416,27 @@ direction, apparatus failures, and gross effect size before paying for the full
 16-seed / 3000-generation panel. It does not replace the full preregistered
 panel as the statistical test.
 
+
+
+## Long geometry duration follow-up
+
+To test whether the noisy ellipse-minus-circle drift contrast tightens with a
+longer trajectory, run the same four matched geometry seeds for 3000 generations
+instead of the 750-generation pilot. The machine, landscapes, seed set, and
+light probe budget are unchanged; only duration and the corresponding fork time
+increase.
+
+    python experiments/cro/run_panel.py --geometry-long --phase geometry --jobs 2
+
+This writes to:
+
+    experiments/cro/results/cro_v3_mux6_probe_split/geometry_long/geometry/
+
+Analyze it independently with:
+
+    python experiments/cro/analyze.py --root experiments/cro/results/cro_v3_mux6_probe_split/geometry_long
+
+This is a duration follow-up. Its main comparison is whether G1 becomes more
+stable and directional relative to the 750-generation geometry pilot, while G1b
+continues to show lower-curvature drift.
+
