@@ -263,7 +263,10 @@ def geometry_population_metrics(pop, mg, evals, fit):
 
 
 def probe_population(pop, mg, fit, seed, generation, org_limit, trials):
-    prng = random.Random("probe:%s:%s:%s:%s" % (seed, fit.a, fit.b, generation))
+    select_rng = random.Random(
+        "geometry-probe-select:%s:%s:%s:%s"
+        % (seed, fit.a, fit.b, generation)
+    )
     ridge_idxs = []
     for i, org in enumerate(pop):
         x, y = endpoint_org(org, mg, fit)
@@ -279,7 +282,7 @@ def probe_population(pop, mg, fit, seed, generation, org_limit, trials):
             "canonical_normal_var": None,
         }
     if len(ridge_idxs) > org_limit:
-        ridge_idxs = prng.sample(ridge_idxs, org_limit)
+        ridge_idxs = select_rng.sample(ridge_idxs, org_limit)
 
     n = can_ok = prop_ok = atom_ok = 0
     tan2 = norm2 = 0.0
@@ -287,8 +290,15 @@ def probe_population(pop, mg, fit, seed, generation, org_limit, trials):
         org = pop[idx]
         px, py = endpoint_org(org, mg, fit)
         tangent, normal = fit.tangent_normal_xy(px, py)
-        for _ in range(trials):
-            mo, mm = C.canonical_pass_mutant(org, mg, prng)
+        for trial in range(trials):
+            key = "%s:%s:%s:%s:%s" % (
+                seed, fit.a, fit.b, generation, "%s:%s" % (idx, trial)
+            )
+            can_rng = random.Random("geometry-probe-canonical:" + key)
+            prop_rng = random.Random("geometry-probe-proposal:" + key)
+            atom_rng = random.Random("geometry-probe-atomic:" + key)
+
+            mo, mm = C.canonical_pass_mutant(org, mg, can_rng)
             mx, my = endpoint_org(mo, mm, fit)
             can_ok += int(fit.on_ridge_xy(mx, my))
             dx, dy = mx - px, my - py
@@ -297,11 +307,11 @@ def probe_population(pop, mg, fit, seed, generation, org_limit, trials):
             tan2 += tp * tp
             norm2 += np * np
 
-            po, pm = C.proposal_mutant(org, mg, prng)
+            po, pm = C.proposal_mutant(org, mg, prop_rng)
             qx, qy = endpoint_org(po, pm, fit)
             prop_ok += int(fit.on_ridge_xy(qx, qy))
 
-            ad = C.atomic_mutant(org, mg, prng)
+            ad = C.atomic_mutant(org, mg, atom_rng)
             ax, ay = fit.endpoint(tokens_to_atoms(ad))
             atom_ok += int(fit.on_ridge_xy(ax, ay))
             n += 1
