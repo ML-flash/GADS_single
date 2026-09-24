@@ -200,13 +200,13 @@ representation-sensitive probes. If only the latter move, that distinguishes a
 change in GADS coordinates from a change in the underlying phenotype's ordinary
 atom-level fragility.
 
-## Phase B — GADS_single/MUX11 neutral orbit
+## Phase B — GADS_single/MUX6 neutral orbit
 
-Phase B uses canonical River MUX11 but removes the original scoring confound
+Phase B uses the canonical GADS_single 6-MUX evaluator but removes the original scoring confound
 from the orbit.
 
-The runner constructs an exact 50-token postfix MUX11 program and verifies it is
-2048/2048 before the run. It initializes an atomic population with neutral
+The runner constructs an exact 22-token postfix MUX6 program and verifies it is
+64/64 before the run. It initializes an atomic population with neutral
 prefix diversity around this exact solution.
 
 Orbit fitness is then exactly:
@@ -221,10 +221,12 @@ There is:
 - no robustness term;
 - no structural term.
 
-Thus every 2048/2048 program has identical maximal scalar fitness.
+Thus every 64/64 program has identical maximal scalar fitness.
 
-The full-GADS arm uses the frozen Experiment-1 GADS rate block. The KO arm uses
-the same block with composition formation/reuse disabled.
+The full-GADS arm uses the official GADS_single single-node parameter block
+from the repository's default config: population 300, 200 parents, 5% mutation,
+9% capture, and the standalone boundary/open/MCO rates. The KO arm uses the
+same block with composition formation/reuse disabled.
 
 The full arm is again forked at generation 1500 into INTACT, FLAT-LOCK and
 FLAT-RECOVER branches under an exact decoded-program preservation gate.
@@ -234,13 +236,13 @@ FLAT-RECOVER branches under an exact decoded-program preservation gate.
 For perfect organisms the experiment estimates:
 
     R_canonical =
-      P(one canonical mutation pass remains 2048/2048)
+      P(one canonical mutation pass remains 64/64)
 
     R_proposal =
-      P(one exposed-token proposal remains 2048/2048)
+      P(one exposed-token proposal remains 64/64)
 
     R_atomic =
-      P(one decoded-base-atom substitution remains 2048/2048)
+      P(one decoded-base-atom substitution remains 64/64)
 
 and the corresponding mean number of truth-table rows lost.
 
@@ -364,7 +366,7 @@ analogue. The intended evidential order is:
         ->
     flatten/recover causal fork
         ->
-    MUX11 correctness-only orbit
+    MUX6 correctness-only orbit
         ->
     MUX flatten/recover fork
 
@@ -374,7 +376,7 @@ renormalization hypothesis.
 ## Pilot run
 
 For fast exploratory results without changing the machine, population sizes,
-landscapes, MUX11 evaluator, or interventions:
+landscapes, MUX6 evaluator, or interventions:
 
     python experiments/cro/run_panel.py --pilot --phase both --jobs 2
 
