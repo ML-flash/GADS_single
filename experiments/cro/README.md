@@ -1,4 +1,4 @@
-# Curvature-Renormalization Orbit (CRO) — Experiment v1
+# Curvature-Renormalization Orbit (CRO) — Experiment v3
 
 ## Question
 
@@ -56,7 +56,7 @@ One seed is one independently evolving population and one observation.
 Generations, organisms and probe mutations are repeated measurements inside that
 observation. They are never treated as independent replicates.
 
-The v1 panel is 16 matched seeds, 1..16. Conditions with the same seed are
+The full panel is 16 matched seeds, 1..16. Conditions with the same seed are
 paired.
 
 ## Phase A — controlled curvature replication
@@ -257,6 +257,19 @@ R_proposal explicitly measures the coordinate system exposed by the current
 GADS representation. R_atomic ignores that representation and acts as the
 control.
 
+Probe randomization is family- and trial-isolated. Organism selection,
+canonical-pass mutation, proposal mutation, and atomic mutation use independent
+deterministic RNG keys. A representation-dependent number of random draws in
+one probe therefore cannot alter any other probe or a later trial.
+
+At the flattening fork, the exact same population is probed immediately before
+and immediately after phenotype-preserving flattening with matched perturbation
+keys. The apparatus asserts that atomic robustness and atomic mean loss are
+exactly unchanged at that instant. Immediate changes in proposal/canonical
+robustness therefore isolate the representation intervention itself; later
+atomic differences measure downstream movement among equally maximal decoded
+programs.
+
 ## Tie handling
 
 An exactly degenerate objective exposes a normally invisible implementation
@@ -269,7 +282,7 @@ ordering, canonical G.breed, canonical mutation and canonical Meta-Genome
 mechanics are unchanged.
 
 This is apparatus required to avoid injecting an artificial direction into the
-neutral manifold; it is not a GADS modification.
+degenerate peak; it is not a GADS modification.
 
 ## Prespecified reductions
 
@@ -322,7 +335,7 @@ result on one contrast does not promote the others automatically.
   difference may be attributable to movement in phenotype space rather than to
   representation alone and must be interpreted accordingly.
 - MUX correctness is the only Phase-B fitness. Any accidental use of original or
-  rebalanced MUX scalar scoring invalidates the neutral-orbit result.
+  rebalanced MUX scalar scoring invalidates the degenerate-peak result.
 
 ## Run
 
@@ -354,9 +367,9 @@ Analyze whatever completed products exist:
 
 Products are written beneath:
 
-    experiments/cro/results/geometry/
-    experiments/cro/results/mux/
-    experiments/cro/results/analysis.json
+    experiments/cro/results/cro_v3_mux6_probe_split/geometry/
+    experiments/cro/results/cro_v3_mux6_probe_split/mux/
+    experiments/cro/results/cro_v3_mux6_probe_split/analysis.json
 
 results/ should remain uncommitted outcome data.
 
@@ -391,12 +404,12 @@ The pilot uses four matched seeds (1-4), 750 generations, a fork at generation
 375, checkpoints every 25 generations, and 8 x 2 read-only mutation probes.
 Outputs are isolated under:
 
-    experiments/cro/results/pilot/geometry/
-    experiments/cro/results/pilot/mux/
+    experiments/cro/results/cro_v3_mux6_probe_split/pilot/geometry/
+    experiments/cro/results/cro_v3_mux6_probe_split/pilot/mux/
 
 Analyze only the pilot products with:
 
-    python experiments/cro/analyze.py --root experiments/cro/results/pilot
+    python experiments/cro/analyze.py --root experiments/cro/results/cro_v3_mux6_probe_split/pilot
 
 The pilot is exploratory. It is intended to expose trajectory shape, effect
 direction, apparatus failures, and gross effect size before paying for the full
