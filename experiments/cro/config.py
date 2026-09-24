@@ -25,6 +25,13 @@ CHECKPOINT_EVERY = 50
 PROBE_ORGS = 24
 PROBES_PER_ORG = 8
 
+# A full canonical mutate_org pass is intentionally much more expensive than
+# the standardized proposal and atomic probes: calculate_depth rescans the
+# exposed prefix at each visited position. Keep that diagnostic exact, but
+# sample it sparsely so observation cost does not dominate the experiment.
+CANONICAL_PROBE_ORGS = 4
+CANONICAL_CHECKPOINT_EVERY = 250
+
 # ----------------------------- geometry ------------------------------------
 GEOMETRY_GENERATIONS = 3000
 GEOMETRY_FORK_GENERATION = 1500
