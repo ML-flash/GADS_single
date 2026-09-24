@@ -248,7 +248,7 @@ def mux_tests(records):
         lambda r: drift(r["conditions"]["mux_full"], "proposal_robustness"),
     )
     tests.append(summarize(
-        "M1 neutral MUX full-GADS proposal robustness drift > 0",
+        "M1 degenerate-peak MUX full-GADS proposal robustness drift > 0",
         seeds, vals, alternative="greater"
     ))
 
@@ -257,7 +257,7 @@ def mux_tests(records):
         lambda r: drift(r["conditions"]["mux_full"], "canonical_robustness"),
     )
     tests.append(summarize(
-        "M2 neutral MUX full-GADS canonical-pass robustness drift > 0",
+        "M2 degenerate-peak MUX full-GADS canonical-pass robustness drift > 0",
         seeds, vals, alternative="greater"
     ))
 
