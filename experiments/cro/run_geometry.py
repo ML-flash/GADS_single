@@ -281,29 +281,21 @@ def probe_population(pop, mg, fit, seed, generation, org_limit, trials):
     if len(ridge_idxs) > org_limit:
         ridge_idxs = prng.sample(ridge_idxs, org_limit)
 
-    n = prop_ok = atom_ok = 0
-    can_n = can_ok = 0
+    n = can_ok = prop_ok = atom_ok = 0
     tan2 = norm2 = 0.0
-    do_canonical = generation % CFG.CANONICAL_CHECKPOINT_EVERY == 0
-    canonical_idxs = set(ridge_idxs[:CFG.CANONICAL_PROBE_ORGS]) if do_canonical else set()
     for idx in ridge_idxs:
         org = pop[idx]
         px, py = endpoint_org(org, mg, fit)
         tangent, normal = fit.tangent_normal_xy(px, py)
-        for trial in range(trials):
-            # One exact full-machine mutation pass per sampled organism on the
-            # sparse canonical-probe checkpoints. Proposal/atomic probes retain
-            # the full preregistered Monte Carlo budget at every checkpoint.
-            if idx in canonical_idxs and trial == 0:
-                mo, mm = C.canonical_pass_mutant(org, mg, prng)
-                mx, my = endpoint_org(mo, mm, fit)
-                can_ok += int(fit.on_ridge_xy(mx, my))
-                dx, dy = mx - px, my - py
-                tp = dx * tangent[0] + dy * tangent[1]
-                np = dx * normal[0] + dy * normal[1]
-                tan2 += tp * tp
-                norm2 += np * np
-                can_n += 1
+        for _ in range(trials):
+            mo, mm = C.canonical_pass_mutant(org, mg, prng)
+            mx, my = endpoint_org(mo, mm, fit)
+            can_ok += int(fit.on_ridge_xy(mx, my))
+            dx, dy = mx - px, my - py
+            tp = dx * tangent[0] + dy * tangent[1]
+            np = dx * normal[0] + dy * normal[1]
+            tan2 += tp * tp
+            norm2 += np * np
 
             po, pm = C.proposal_mutant(org, mg, prng)
             qx, qy = endpoint_org(po, pm, fit)
@@ -316,14 +308,12 @@ def probe_population(pop, mg, fit, seed, generation, org_limit, trials):
 
     return {
         "probe_n": n,
-        "canonical_probe_n": can_n,
-        "canonical_robustness": (can_ok / float(can_n) if can_n else None),
+        "canonical_robustness": can_ok / float(n),
         "proposal_robustness": prop_ok / float(n),
         "atomic_robustness": atom_ok / float(n),
-        "canonical_tangent_var": (tan2 / float(can_n) if can_n else None),
-        "canonical_normal_var": (norm2 / float(can_n) if can_n else None),
+        "canonical_tangent_var": tan2 / float(n),
+        "canonical_normal_var": norm2 / float(n),
     }
-
 
 def observe(pop, mg, fit, seed, generation, org_limit, trials):
     evals, service = G.evaluate_population(pop, mg)
