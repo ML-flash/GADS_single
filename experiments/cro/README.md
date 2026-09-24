@@ -370,3 +370,27 @@ analogue. The intended evidential order is:
 
 This keeps the biological replication question separate from the stronger GADS
 renormalization hypothesis.
+
+## Pilot run
+
+For fast exploratory results without changing the machine, population sizes,
+landscapes, MUX11 evaluator, or interventions:
+
+    python experiments/cro/run_panel.py --pilot --phase both --jobs 2
+
+The pilot uses four matched seeds (1-4), 750 generations, a fork at generation
+375, checkpoints every 25 generations, and 8 x 2 read-only mutation probes.
+Outputs are isolated under:
+
+    experiments/cro/results/pilot/geometry/
+    experiments/cro/results/pilot/mux/
+
+Analyze only the pilot products with:
+
+    python experiments/cro/analyze.py --root experiments/cro/results/pilot
+
+The pilot is exploratory. It is intended to expose trajectory shape, effect
+direction, apparatus failures, and gross effect size before paying for the full
+16-seed / 3000-generation panel. It does not replace the full preregistered
+panel as the statistical test.
+
