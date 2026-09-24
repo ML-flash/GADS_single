@@ -35,7 +35,7 @@ phenotype and external fitness are held fixed.
 The machine is the official GADS_single implementation:
 
     GADS.py
-    git blob 829e9bd74f8f403207cc41a730a6e429501fe75e
+    git blob 0975489901e88ea9bcc4145d7f25686948e736e4
 
 The evaluator used by Phase B is:
 
