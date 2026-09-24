@@ -105,15 +105,20 @@ def probe_population(pop, mg, fit, seed, generation, org_limit, trials):
     if len(perfect) > org_limit:
         perfect = prng.sample(perfect, org_limit)
 
-    n = can_ok = prop_ok = atom_ok = 0
+    n = prop_ok = atom_ok = 0
+    can_n = can_ok = 0
     can_loss = prop_loss = atom_loss = 0.0
+    do_canonical = generation % CFG.CANONICAL_CHECKPOINT_EVERY == 0
+    canonical_idxs = set(perfect[:CFG.CANONICAL_PROBE_ORGS]) if do_canonical else set()
     for idx in perfect:
         org = pop[idx]
-        for _ in range(trials):
-            mo, mm = C.canonical_pass_mutant(org, mg, prng)
-            mc = correct_org(mo, mm, fit)
-            can_ok += int(mc == fit.n_rows)
-            can_loss += fit.n_rows - mc
+        for trial in range(trials):
+            if idx in canonical_idxs and trial == 0:
+                mo, mm = C.canonical_pass_mutant(org, mg, prng)
+                mc = correct_org(mo, mm, fit)
+                can_ok += int(mc == fit.n_rows)
+                can_loss += fit.n_rows - mc
+                can_n += 1
 
             po, pm = C.proposal_mutant(org, mg, prng)
             pc = correct_org(po, pm, fit)
@@ -128,10 +133,11 @@ def probe_population(pop, mg, fit, seed, generation, org_limit, trials):
 
     return {
         "probe_n": n,
-        "canonical_robustness": can_ok / float(n),
+        "canonical_probe_n": can_n,
+        "canonical_robustness": (can_ok / float(can_n) if can_n else None),
         "proposal_robustness": prop_ok / float(n),
         "atomic_robustness": atom_ok / float(n),
-        "canonical_mean_loss": can_loss / float(n),
+        "canonical_mean_loss": (can_loss / float(can_n) if can_n else None),
         "proposal_mean_loss": prop_loss / float(n),
         "atomic_mean_loss": atom_loss / float(n),
     }
