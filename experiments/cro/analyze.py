@@ -335,7 +335,7 @@ def main(argv=None):
     if gt:
         print_tests("GEOMETRY", gt)
     if mt:
-        print_tests("MUX11", mt)
+        print_tests("MUX6", mt)
 
     result = {
         "experiment": CFG.EXPERIMENT_ID,
