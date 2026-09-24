@@ -1,9 +1,11 @@
-"""CRO Phase B: neutral MUX6 orbit under official GADS_single GADS.
+"""CRO Phase B: degenerate-peak MUX6 orbit under official GADS_single GADS.
 
-The run starts directly on an exact 64/64 MUX6 solution.  Fitness during
-this experiment is *correct rows only*.  All perfect programs therefore have
-exactly equal scalar fitness; original M-E-GA length/operation terms are absent
-from the orbit by construction.
+The run starts directly on an exact 64/64 MUX6 solution. Fitness during this
+experiment is *correct rows only*. All perfect programs therefore have exactly
+equal maximal scalar fitness, while imperfect programs remain below the peak
+and are selected against. This is a degenerate-peak orbit, not globally neutral
+drift. Original M-E-GA length/operation terms are absent from the orbit by
+construction.
 
 Conditions are matched within seed:
 
@@ -336,7 +338,7 @@ def run_seed(seed, generations, fork_generation, checkpoint_every, org_limit, tr
 
 
 def build_parser():
-    p = argparse.ArgumentParser(description="CRO Phase B neutral MUX6 orbit")
+    p = argparse.ArgumentParser(description="CRO Phase B degenerate-peak MUX6 orbit")
     p.add_argument("--seed", type=int, required=True)
     p.add_argument("--generations", type=int, default=CFG.MUX_GENERATIONS)
     p.add_argument("--fork-generation", type=int, default=CFG.MUX_FORK_GENERATION)
