@@ -440,3 +440,18 @@ This is a duration follow-up. Its main comparison is whether G1 becomes more
 stable and directional relative to the 750-generation geometry pilot, while G1b
 continues to show lower-curvature drift.
 
+The analyzer also emits descriptive time-resolved geometry diagnostics from the
+existing checkpoints; this does not add statistical replicates or change the
+registered seed-level tests. G2(t) is the baseline-adjusted ellipse-full minus
+circle-full low-curvature progress contrast. G3(t) is the baseline-adjusted
+ellipse-full minus ellipse-KO proposal-robustness contrast. The same rows report
+the contemporaneous ellipse-full MCO size, compression ratio, composition
+fraction/depth, mean dH per payload, and encoded/decoded lengths. The analyzer
+reports the first five-checkpoint positive run for G2(t) and G3(t), writes the
+full table into analysis.json, and also writes:
+
+    experiments/cro/results/cro_v3_mux6_probe_split/geometry_long/geometry_trajectory.csv
+
+These trajectory diagnostics are descriptive only; seed/population remains the
+statistical unit.
+
